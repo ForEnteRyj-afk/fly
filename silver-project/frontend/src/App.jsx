@@ -94,6 +94,14 @@ export default function App() {
   const [language, setLanguage] = useState({ code: 'ru', label: 'Русский', flag: '🇷🇺' });
   const [toast, setToast] = useState(null);
   const [showBalance, setShowBalance] = useState(true);
+  const [depositCrypto, setDepositCrypto] = useState('USDT');
+  const [depositNetwork, setDepositNetwork] = useState('TON');
+  const [withdrawAsset, setWithdrawAsset] = useState('USDT');
+  const [withdrawNetwork, setWithdrawNetwork] = useState('');
+  const [withdrawAddress, setWithdrawAddress] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [swapAmount, setSwapAmount] = useState('');
+  const [showNetworkSelect, setShowNetworkSelect] = useState(false);
 
   // --- ДАННЫЕ ---
   const [userAssets, setUserAssets] = useState({ usdt: 0, ton: 0 });
@@ -167,6 +175,10 @@ export default function App() {
     setTimeout(() => setToast(null), 2000);
   };
 
+  const depositOptions = assetsList.filter((asset) => ['USDT', 'TON'].includes(asset.code));
+  const selectedDepositNetworks = assetsList.find((asset) => asset.code === depositCrypto)?.networks || [];
+  const selectedWithdrawNetworks = assetsList.find((asset) => asset.code === withdrawAsset)?.networks || [];
+
   return (
     <div className="min-h-screen bg-[#060608] text-white font-sans selection:bg-white/10 flex flex-col overflow-hidden relative">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -211,7 +223,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex justify-between px-6 mb-10">
+            <div className="flex justify-center gap-8 mb-10">
               <ActionButton icon={Plus} label="Пополнить" primary onClick={() => setActiveModal('deposit')} />
               <ActionButton icon={ArrowUpRight} label="Вывод" onClick={() => setActiveModal('withdraw')} />
               <ActionButton icon={RefreshCw} label="Обмен" onClick={() => setActiveModal('swap')} />
@@ -249,7 +261,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ... ВКЛАДКИ (History, Services, Profile) - они не менялись ... */}
         {tab === 'history' && (
            <div className="flex flex-col items-center justify-center h-[60vh] animate-in fade-in">
               <div className="w-24 h-24 rounded-[32px] bg-white/5 flex items-center justify-center mb-6 text-gray-500"><History size={48} strokeWidth={1.5} /></div>
@@ -257,8 +268,147 @@ export default function App() {
               <p className="text-gray-500 font-medium">Транзакции появятся здесь</p>
            </div>
         )}
-        {tab === 'services' && (<div className="text-center mt-20 text-gray-500">Раздел Сервисы</div>)}
-        {tab === 'profile' && (<div className="text-center mt-20 text-gray-500">Раздел Профиль</div>)}
+        {tab === 'services' && (
+           <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-4">
+              {!serviceCategory ? (
+                 <>
+                    <h2 className="text-3xl font-black px-2">Сервисы</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                       <button className="h-44 p-6 bg-white/[0.03] border border-white/[0.06] rounded-[32px] flex flex-col justify-between items-start active:scale-[0.98] transition-transform">
+                          <div className="w-14 h-14 rounded-[20px] bg-blue-500/20 flex items-center justify-center text-blue-400">
+                             <Smartphone size={28} />
+                          </div>
+                          <span className="font-black text-xl text-left leading-tight">Мобильная<br/>связь</span>
+                       </button>
+                       <button 
+                          onClick={() => setServiceCategory('utilities')}
+                          className="h-44 p-6 bg-white/[0.03] border border-white/[0.06] rounded-[32px] flex flex-col justify-between items-start active:scale-[0.98] transition-transform"
+                       >
+                          <div className="w-14 h-14 rounded-[20px] bg-orange-500/20 flex items-center justify-center text-orange-400">
+                             <House size={28} />
+                          </div>
+                          <span className="font-black text-xl text-left leading-tight">Коммунальные<br/>услуги</span>
+                       </button>
+                    </div>
+                 </>
+              ) : (
+                 <div className="animate-in slide-in-from-right-8 duration-300">
+                    <div className="flex items-center gap-2 mb-8">
+                       <button onClick={() => setServiceCategory(null)} className="p-3 -ml-2 rounded-full hover:bg-white/10 text-gray-400">
+                          <ChevronLeft size={32} />
+                       </button>
+                       <h2 className="text-2xl font-black">Коммунальные услуги</h2>
+                    </div>
+                    <div className="space-y-3">
+                       {[
+                          { title: 'Интернет', sub: 'IDC, LinkService', icon: Wifi },
+                          { title: 'Домофон', sub: 'Оплата услуг', icon: Key },
+                          { title: 'ЖКУ', sub: 'Свет, Вода, Газ', icon: Lightbulb },
+                          { title: 'Аренда', sub: 'Оплата помещений', icon: Building },
+                       ].map((item, i) => (
+                          <button key={i} className="w-full p-5 bg-white/[0.03] border border-white/[0.06] rounded-[28px] flex items-center gap-5 active:scale-[0.98] transition-transform">
+                             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white">
+                                <item.icon size={24} />
+                             </div>
+                             <div className="text-left">
+                                <div className="font-black text-lg">{item.title}</div>
+                                <div className="text-xs font-bold text-gray-500">{item.sub}</div>
+                             </div>
+                             <ChevronRight className="ml-auto text-gray-600" />
+                          </button>
+                       ))}
+                    </div>
+                 </div>
+              )}
+           </div>
+        )}
+        {tab === 'profile' && (
+           <div className="space-y-8 pt-4 animate-in fade-in slide-in-from-bottom-4">
+              <div className="flex items-center justify-between px-2">
+                 <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-gray-700 to-gray-900 p-[2px]">
+                       <div className="w-full h-full bg-[#121214] rounded-full flex items-center justify-center text-gray-400">
+                          <User size={32} />
+                       </div>
+                    </div>
+                    <div>
+                       <h2 className="text-2xl font-black">@TweenGI</h2>
+                       <p className="text-sm font-bold text-gray-500">Исследователь</p>
+                    </div>
+                 </div>
+                 <button 
+                    onClick={() => copyToClipboard('1294022')}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/5 active:scale-95 transition-transform"
+                 >
+                    <span className="text-xs font-bold text-gray-400">ID: 1294022</span>
+                    <Copy size={12} className="text-gray-500" />
+                 </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                 <div className="p-5 bg-white/[0.03] border border-white/[0.06] rounded-[28px]">
+                    <div className="w-10 h-10 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center mb-3">
+                       <ShieldCheck size={20} />
+                    </div>
+                    <p className="text-xs font-bold text-gray-500 mb-1">Верификация</p>
+                    <p className="font-black text-white">Пройдена ›</p>
+                 </div>
+                 <div className="p-5 bg-white/[0.03] border border-white/[0.06] rounded-[28px]">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center mb-3">
+                       <Mail size={20} />
+                    </div>
+                    <p className="text-xs font-bold text-gray-500 mb-1">Email</p>
+                    <p className="font-black text-white">Добавить ›</p>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                 <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-4">Предпочтения</p>
+                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-[32px] overflow-hidden">
+                       <button 
+                          onClick={() => setShowLanguageModal(true)}
+                          className="w-full p-5 flex items-center gap-4 hover:bg-white/5 border-b border-white/5"
+                       >
+                          <Globe className="text-blue-400" size={22} />
+                          <span className="font-bold text-base">Язык</span>
+                          <div className="ml-auto flex items-center gap-2">
+                             <span className="text-sm font-medium text-gray-400">{language.label}</span>
+                             <ChevronRight size={20} className="text-gray-600" />
+                          </div>
+                       </button>
+                       <button className="w-full p-5 flex items-center gap-4 hover:bg-white/5">
+                          <Coins className="text-blue-400" size={22} />
+                          <span className="font-bold text-base">Валюта</span>
+                          <div className="ml-auto flex items-center gap-2">
+                             <span className="text-sm font-medium text-gray-400">RUB</span>
+                             <ChevronRight size={20} className="text-gray-600" />
+                          </div>
+                       </button>
+                    </div>
+                 </div>
+
+                 <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-4">Параметры</p>
+                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-[32px] overflow-hidden">
+                       <button className="w-full p-5 flex items-center gap-4 hover:bg-white/5 border-b border-white/5">
+                          <Shield className="text-blue-400" size={22} />
+                          <span className="font-bold text-base">Безопасность</span>
+                          <ChevronRight size={20} className="ml-auto text-gray-600" />
+                       </button>
+                       <button className="w-full p-5 flex items-center gap-4 hover:bg-white/5">
+                          <DeviceIcon className="text-blue-400" size={22} />
+                          <span className="font-bold text-base">Устройства</span>
+                          <div className="ml-auto flex items-center gap-2">
+                             <span className="text-sm font-medium text-gray-400">2</span>
+                             <ChevronRight size={20} className="text-gray-600" />
+                          </div>
+                       </button>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        )}
 
       </main>
 
@@ -286,9 +436,174 @@ export default function App() {
         </div>
       </div>
 
-      <Modal isOpen={activeModal === 'deposit'} onClose={() => setActiveModal(null)} title="Пополнение"><div className="text-white">Функция пополнения</div></Modal>
-      <Modal isOpen={activeModal === 'withdraw'} onClose={() => setActiveModal(null)} title="Вывод"><div className="text-white">Функция вывода</div></Modal>
-      <Modal isOpen={activeModal === 'swap'} onClose={() => setActiveModal(null)} title="Обмен"><div className="text-white">Функция обмена</div></Modal>
+      <Modal isOpen={activeModal === 'deposit'} onClose={() => setActiveModal(null)} title="Пополнение">
+         <div className="space-y-8">
+            <div>
+               <p className="text-[11px] font-black text-gray-500 uppercase mb-4 ml-2 tracking-widest">Выберите криптовалюту</p>
+               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {depositOptions.map((coin) => (
+                     <button 
+                        key={coin.code} 
+                        onClick={() => setDepositCrypto(coin.code)}
+                        className={`
+                           relative flex flex-col items-start gap-3 p-5 rounded-[28px] min-w-[120px] border-[2px] transition-all duration-300
+                           ${depositCrypto === coin.code ? 'bg-white/[0.08] border-[#007AFF] shadow-lg' : 'bg-white/[0.03] border-transparent'}
+                        `}
+                     >
+                        <img src={ASSET_ICONS[coin.code]} className="w-10 h-10 object-contain" alt={coin.code} />
+                        <div className="flex flex-col items-start mt-2">
+                           <span className="font-black text-lg">{coin.code}</span>
+                           <span className="text-xs font-bold text-gray-400">0 {coin.code}</span>
+                        </div>
+                     </button>
+                  ))}
+               </div>
+            </div>
+            <div>
+               <p className="text-[11px] font-black text-gray-500 uppercase mb-4 ml-2 tracking-widest">Выберите сеть</p>
+               <div className="space-y-3">
+                  {selectedDepositNetworks.map((net) => (
+                     <button 
+                        key={net}
+                        onClick={() => setDepositNetwork(net)}
+                        className={`
+                           w-full p-5 rounded-[28px] flex items-center justify-between border-[2px] transition-all
+                           ${depositNetwork === net ? 'bg-white/[0.08] border-transparent' : 'bg-white/[0.02] border-transparent'}
+                        `}
+                     >
+                        <div className="flex items-center gap-5">
+                           <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden ${depositNetwork === net ? 'bg-white text-black' : 'bg-white/10'}`}>
+                              <img src={NETWORK_ICONS[net]} className="w-full h-full object-cover scale-110" alt={net} />
+                           </div>
+                           <div className="text-left">
+                              <p className="font-black text-lg">{net}</p>
+                              <p className="text-xs font-bold text-gray-500">Комиссия до {net === 'TON' ? '0.0' : '2.75'} {depositCrypto}</p>
+                           </div>
+                        </div>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${depositNetwork === net ? 'bg-[#007AFF]' : 'bg-white/10'}`}>
+                           {depositNetwork === net && <Check size={16} strokeWidth={4} />}
+                        </div>
+                     </button>
+                  ))}
+               </div>
+            </div>
+            <button className="w-full py-5 bg-[#007AFF] text-white font-black text-lg rounded-[28px] shadow-lg active:scale-[0.98] transition-all">Продолжить</button>
+         </div>
+      </Modal>
+      <Modal isOpen={activeModal === 'withdraw'} onClose={() => setActiveModal(null)} title="Вывод средств">
+         <div className="space-y-6 pt-2">
+            <div className="flex bg-white/5 p-1 rounded-[20px]">
+               {depositOptions.map((asset) => (
+                  <button key={asset.code} onClick={() => setWithdrawAsset(asset.code)} className={`flex-1 py-3 rounded-[16px] text-sm font-black transition-all ${withdrawAsset === asset.code ? 'bg-white text-black shadow-lg' : 'text-gray-500'}`}>{asset.code}</button>
+               ))}
+            </div>
+            <div className="bg-white/[0.03] border border-white/[0.08] rounded-[32px] p-6 space-y-4">
+               <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Адрес</span>
+                  <div className="flex gap-3">
+                     <button className="p-2 bg-white/5 rounded-xl text-white"><Scan size={20}/></button>
+                     <button className="p-2 bg-white/5 rounded-xl text-white"><Maximize2 size={20}/></button>
+                  </div>
+               </div>
+               <textarea value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Вставьте адрес" className="w-full bg-transparent text-white font-bold text-lg placeholder:text-gray-700 focus:outline-none resize-none h-16"/>
+            </div>
+            <div className="relative">
+                <button onClick={() => setShowNetworkSelect(!showNetworkSelect)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-[32px] p-5 flex items-center justify-between active:bg-white/[0.05]">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center overflow-hidden">
+                            {withdrawNetwork ? <img src={NETWORK_ICONS[withdrawNetwork]} className="w-full h-full object-cover" alt={withdrawNetwork} /> : <LayoutGrid size={24} className="text-gray-500" />}
+                        </div>
+                        <div className="text-left">
+                            <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1">Сеть</p>
+                            <p className={`font-black text-lg ${withdrawNetwork ? 'text-white' : 'text-gray-600'}`}>{withdrawNetwork || "Выберите сеть"}</p>
+                        </div>
+                    </div>
+                    <ChevronDown className={`text-gray-500 transition-transform ${showNetworkSelect ? 'rotate-180' : ''}`} />
+                </button>
+                {showNetworkSelect && (
+                   <div className="absolute top-full left-0 right-0 mt-2 bg-[#1C1C1E] border border-white/10 rounded-[28px] overflow-hidden z-20 shadow-2xl animate-in fade-in slide-in-from-top-2">
+                      {selectedWithdrawNetworks.map((net) => (
+                         <button key={net} onClick={() => { setWithdrawNetwork(net); setShowNetworkSelect(false); }} className="w-full p-4 flex items-center gap-4 hover:bg-white/5 border-b border-white/5 last:border-0">
+                            <img src={NETWORK_ICONS[net]} className="w-8 h-8 rounded-full" alt={net} />
+                            <div className="text-left"><p className="font-bold">{net}</p></div>
+                            {withdrawNetwork === net && <Check size={16} className="ml-auto text-blue-500" />}
+                         </button>
+                      ))}
+                   </div>
+                )}
+            </div>
+            <div className="bg-white/[0.03] border border-white/[0.08] rounded-[32px] p-6 flex justify-between items-center">
+                <div>
+                   <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Сумма</p>
+                   <input type="number" placeholder="0.00" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} className="bg-transparent text-3xl font-black text-white placeholder:text-gray-700 focus:outline-none w-32"/>
+                </div>
+                <button className="px-4 py-2 bg-white/10 rounded-[14px] text-sm font-bold text-blue-400">Max</button>
+            </div>
+            <button className="w-full py-5 bg-white text-black font-black text-lg rounded-[28px] shadow-lg active:scale-[0.98] transition-all">Вывести</button>
+         </div>
+      </Modal>
+      <Modal isOpen={activeModal === 'swap'} onClose={() => setActiveModal(null)} title="Обмен крипто">
+         <div className="space-y-4 pt-2">
+            <div className="bg-[#1C1C1E] rounded-[32px] p-6 border border-white/5 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none"><img src={ASSET_ICONS.USDT} className="w-32 h-32" alt="USDT" /></div>
+               <div className="flex justify-between items-center mb-6 relative z-10">
+                  <span className="text-[12px] font-black text-gray-500 uppercase tracking-wide">Вы отдаете</span>
+                  <div className="flex items-center gap-3 bg-black/40 pl-3 pr-4 py-2 rounded-full border border-white/5"><img src={ASSET_ICONS.USDT} className="w-6 h-6" alt="USDT" /><span className="font-black text-base">USDT</span><ChevronDown size={16} className="text-gray-500"/></div>
+               </div>
+               <div className="flex justify-between items-end relative z-10">
+                  <input type="number" placeholder="0" value={swapAmount} onChange={(e) => setSwapAmount(e.target.value)} className="bg-transparent text-4xl font-black placeholder:text-gray-700 focus:outline-none w-2/3"/>
+                  <button className="text-[#007AFF] text-sm font-black bg-blue-500/10 px-3 py-1 rounded-lg mb-1">MAX</button>
+               </div>
+               <div className="flex justify-between mt-6 text-[12px] text-gray-500 font-bold border-t border-white/5 pt-4 relative z-10"><span>Баланс: {userAssets.usdt.toFixed(2)}</span><span className="text-white">1 USDT ≈ {pricesInUSD.TON.toFixed(2)} TON</span></div>
+            </div>
+            <div className="flex justify-center -my-5 relative z-20"><div className="w-12 h-12 bg-[#2C2C2E] border-[4px] border-[#121214] rounded-full flex items-center justify-center text-white shadow-xl"><ArrowDown size={22} strokeWidth={3}/></div></div>
+            <div className="bg-[#1C1C1E] rounded-[32px] p-6 border border-white/5 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none"><img src={ASSET_ICONS.TON} className="w-32 h-32" alt="TON" /></div>
+               <div className="flex justify-between items-center mb-6 relative z-10">
+                  <span className="text-[12px] font-black text-gray-500 uppercase tracking-wide">Вы получаете</span>
+                  <div className="flex items-center gap-3 bg-black/40 pl-3 pr-4 py-2 rounded-full border border-white/5"><img src={ASSET_ICONS.TON} className="w-6 h-6" alt="TON" /><span className="font-black text-base">TON</span><ChevronDown size={16} className="text-gray-500"/></div>
+               </div>
+               <div className="flex items-center relative z-10"><span className="text-4xl font-black text-gray-600">~ 0.00</span></div>
+            </div>
+            <button className="w-full py-5 bg-white text-black font-black text-lg rounded-[28px] mt-4 shadow-lg active:scale-[0.98] transition-all">Обменять</button>
+         </div>
+      </Modal>
+      <Modal isOpen={showLanguageModal} onClose={() => setShowLanguageModal(false)} title="Выберите язык">
+          <div className="space-y-2">
+              {[ { code: 'ru', label: 'Русский', flag: '🇷🇺' }, { code: 'ro', label: 'Румынский', flag: '🇲🇩' }, { code: 'en', label: 'Английский', flag: '🇺🇸' } ].map((lang) => (
+                  <button key={lang.code} onClick={() => { setLanguage(lang); setShowLanguageModal(false); }} className="w-full p-4 flex items-center gap-4 bg-white/[0.03] border border-white/[0.06] rounded-[24px] active:scale-[0.98] transition-transform">
+                      <span className="text-2xl">{lang.flag}</span><span className="font-black text-white">{lang.label}</span>
+                      {language.code === lang.code && <Check className="ml-auto text-blue-500" size={20} />}
+                  </button>
+              ))}
+          </div>
+      </Modal>
+      {showScanner && (
+        <div className="fixed inset-0 z-[200] bg-black flex flex-col animate-in fade-in duration-300">
+            <div className="flex items-center justify-between p-6 pt-12 absolute top-0 w-full z-20">
+               <button onClick={() => setShowScanner(false)} className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white"><X size={24}/></button>
+               <span className="text-lg font-black tracking-wide">Сканировать QR</span>
+               <button className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white"><Flashlight size={24}/></button>
+            </div>
+            <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+               <div className="absolute inset-0 bg-gray-900"><div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center"/></div>
+               <div className="relative w-72 h-72 rounded-[32px] border-[2px] border-white/30 z-10 overflow-hidden">
+                  <div className="absolute inset-0 border-[4px] border-white rounded-[30px] opacity-50"/>
+                  <div className="absolute top-0 left-0 w-10 h-10 border-t-[6px] border-l-[6px] border-[#007AFF] rounded-tl-[20px] -mt-[2px] -ml-[2px]"/>
+                  <div className="absolute top-0 right-0 w-10 h-10 border-t-[6px] border-r-[6px] border-[#007AFF] rounded-tr-[20px] -mt-[2px] -mr-[2px]"/>
+                  <div className="absolute bottom-0 left-0 w-10 h-10 border-b-[6px] border-l-[6px] border-[#007AFF] rounded-bl-[20px] -mb-[2px] -ml-[2px]"/>
+                  <div className="absolute bottom-0 right-0 w-10 h-10 border-b-[6px] border-r-[6px] border-[#007AFF] rounded-br-[20px] -mb-[2px] -mr-[2px]"/>
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-[#007AFF] shadow-[0_0_20px_rgba(0,122,255,0.8)] animate-scan-line"/>
+               </div>
+               <p className="absolute bottom-32 text-gray-300 font-bold text-sm bg-black/40 px-4 py-2 rounded-full backdrop-blur-md">Наведите камеру на QR-код</p>
+            </div>
+            <div className="h-32 bg-black/80 backdrop-blur-xl flex items-center justify-center gap-12 pb-8">
+               <div className="flex flex-col items-center gap-2 opacity-50"><div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center"><History size={24}/></div><span className="text-[10px] font-bold">История</span></div>
+               <button className="w-20 h-20 bg-white rounded-full border-[6px] border-gray-300 flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(255,255,255,0.3)] active:scale-95 transition-transform"><div className="w-16 h-16 bg-white border-[2px] border-black rounded-full"/></button>
+               <div className="flex flex-col items-center gap-2"><button className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform hover:bg-white/20"><ImageIcon size={24}/></button><span className="text-[10px] font-bold">Галерея</span></div>
+            </div>
+        </div>
+      )}
     </div>
   );
 }
